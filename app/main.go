@@ -10,14 +10,14 @@ import (
 
 const tmpDirName = "mydocker"
 
-type nopWriter struct{}
+type nopReader struct{}
 
-func (nopWriter) Write(p []byte) (n int, err error) {
+func (nopReader) Read(p []byte) (n int, err error) {
 	return 0, nil
 }
 
 func copyExecutable(src, dst string) error {
-	cmd := exec.Command("cp", "-r", src, dst+"/")
+	cmd := exec.Command("cp", "--parents", src, dst+"/")
 	return cmd.Run()
 }
 
@@ -44,10 +44,14 @@ func main() {
 	if err := syscall.Chroot(tmpDirName); err != nil {
 		panic(fmt.Sprintf("failed to chroot: %v", err))
 	}
+	if err := os.Chdir("/"); err != nil {
+		panic(fmt.Sprintf("failed to chdir: %v", err))
+	}
 
 	cmd := exec.Command(command, args...)
-	cmd.Stdout = nopWriter{}
-	cmd.Stderr = nopWriter{}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = nopReader{}
 
 	if err := cmd.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
