@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -13,7 +14,7 @@ const tmpDirName = "mydocker"
 type nopReader struct{}
 
 func (nopReader) Read(p []byte) (n int, err error) {
-	return 0, nil
+	return 0, io.EOF
 }
 
 func copyExecutable(src, dst string) error {
@@ -32,7 +33,7 @@ func main() {
 	if err := os.Mkdir(tmpDirName, 700); err != nil {
 		panic(fmt.Sprintf("failed to create tmp dir: %v", err))
 	}
-	defer os.RemoveAll(tmpDirName)
+	// defer os.RemoveAll(tmpDirName)
 
 	command := os.Args[3]
 	args := os.Args[4:len(os.Args)]
