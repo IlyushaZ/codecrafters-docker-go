@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"syscall"
 )
-
-const tmpDirName = "mydocker"
 
 type nopReader struct{}
 
@@ -30,19 +29,20 @@ func main() {
 		}
 	}()
 
-	if err := os.Mkdir(tmpDirName, 700); err != nil {
+	tmpDir, err := ioutil.TempDir("", "mydocker")
+	if err != nil {
 		panic(fmt.Sprintf("failed to create tmp dir: %v", err))
 	}
-	// defer os.RemoveAll(tmpDirName)
+	defer os.RemoveAll(tmpDir)
 
 	command := os.Args[3]
 	args := os.Args[4:len(os.Args)]
 
-	if err := copyExecutable(command, tmpDirName); err != nil {
+	if err := copyExecutable(command, tmpDir); err != nil {
 		panic(fmt.Sprintf("failed to copy command to tmp dir: %v", err))
 	}
 
-	if err := syscall.Chroot(tmpDirName); err != nil {
+	if err := syscall.Chroot(tmpDir); err != nil {
 		panic(fmt.Sprintf("failed to chroot: %v", err))
 	}
 	if err := os.Chdir("/"); err != nil {
