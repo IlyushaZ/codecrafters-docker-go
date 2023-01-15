@@ -42,17 +42,15 @@ func main() {
 		panic(fmt.Sprintf("failed to copy command to tmp dir: %v", err))
 	}
 
-	if err := syscall.Chroot(tmpDir); err != nil {
-		panic(fmt.Sprintf("failed to chroot: %v", err))
-	}
-	if err := os.Chdir("/"); err != nil {
-		panic(fmt.Sprintf("failed to chdir: %v", err))
-	}
-
 	cmd := exec.Command(command, args...)
+	cmd.Dir = "/"
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = nopReader{}
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Chroot:     tmpDir,
+		Cloneflags: syscall.CLONE_NEWPID,
+	}
 
 	if err := cmd.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
