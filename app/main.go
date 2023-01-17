@@ -221,6 +221,10 @@ func mustSplit(s, delim string, noShorterThan int) []string {
 
 func splitImageName(image string) (name, ref string, valid bool) {
 	split := strings.Split(image, ":")
+	if len(split) == 1 {
+		return image, "latest", true
+	}
+
 	if len(split) != 2 {
 		return "", "", false
 	}
